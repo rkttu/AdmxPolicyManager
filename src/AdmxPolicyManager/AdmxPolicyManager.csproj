@@ -1,0 +1,46 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<OutputType>Library</OutputType>
+		<AssemblyName>AdmxPolicyManager</AssemblyName>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<RootNamespace>AdmxPolicyManager</RootNamespace>
+		<Title>AdmxPolicyManager</Title>
+		<Version>0.5.0</Version>
+		<Authors>Jung Hyun, Nam</Authors>
+		<Company>rkttu.com</Company>
+		<Product>AdmxPolicyManager</Product>
+		<Description>Windows Policy Setting and Lookup Framework for use with the AdmxParser package</Description>
+		<Copyright>(c) 2024 Jung Hyun, Nam, All rights reserved.</Copyright>
+		<PackageProjectUrl>https://github.com/rkttu/AdmxPolicyManager</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/rkttu/AdmxPolicyManager</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageTags>admx;adml</PackageTags>
+		<PackageReleaseNotes>https://github.com/rkttu/AdmxPolicyManager/releases</PackageReleaseNotes>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<IncludeSymbols>True</IncludeSymbols>
+		<SymbolPackageFormat>symbols.nupkg</SymbolPackageFormat>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+			<_Parameter1>$(AssemblyName).Tests</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="AdmxParser" Version="0.6.7" />
+	</ItemGroup>
+</Project>

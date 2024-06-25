@@ -71,7 +71,5 @@ namespace AdmxPolicyManager.Models.Elements
         /// Gets the presentation control of the policy text element as a <see cref="PolicyComboBoxInfo"/>.
         /// </summary>
         public PolicyComboBoxInfo ComboBoxPresentation => Presentation as PolicyComboBoxInfo;
-
-        PolicyRegistryValue IElementInfo.RegistryValue => throw new System.NotImplementedException();
     }
 }

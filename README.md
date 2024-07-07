@@ -23,15 +23,15 @@ The code below is a simple depiction of how to use it. We'll add more full code 
 var admxDirectory = AdmxDirectory.GetSystemPolicyDefinitions();
 await admxDirectory.LoadAsync();
 
-var inetres = admxDirectory.LoadedAdmxContents.FirstOrDefault(x => x.TargetNamespace.prefix == "inetres")!;
-var fontSizePolicy = inetres.GetUserPolicy("FontSize")!;
+var inetres = admxDirectory.GetAdmxContentByPrefix("inetres");
+var fontSizePolicy = inetres.GetUserPolicy("FontSize");
 fontSizePolicy.SetUserPolicy(true);
-Console.Out.WriteLine(fontSizePolicy.GetUserPolicy());
 
-var elemId = fontSizePolicy.GetElementIds().First();
-Console.Out.WriteLine(fontSizePolicy.GetUserElement(elemId));
-fontSizePolicy.SetUserElement(elemId, 2);
-Console.Out.WriteLine(fontSizePolicy.GetUserElement(elemId));
+var elemIdList = fontSizePolicy.GetElementIds();
+var elemId = elemIdList.FirstOrDefault(x => string.Equals("FontSizeDefault", x, StringComparison.OrdinalIgnoreCase));
+var value = 2;
+var queryResult = fontSizePolicy.GetUserElement(elemId);
+Console.Out.WriteLine(queryResult.Value);
 ```
 
 ## License

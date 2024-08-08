@@ -14,4 +14,9 @@ public sealed class DeleteMultipleGroupPolicyRequest
     /// Gets or sets the value name of the group policy to delete.
     /// </summary>
     public string ValueName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the value should be deleted.
+    /// </summary>
+    public GroupPolicyDeleteResult Result { get; internal set; } = GroupPolicyDeleteResult.BeforeDelete;
 }

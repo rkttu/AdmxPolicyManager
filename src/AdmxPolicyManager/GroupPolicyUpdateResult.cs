@@ -24,4 +24,9 @@ public enum GroupPolicyUpdateResult
     /// Failed to set the group policy.
     /// </summary>
     SetFailed,
+
+    /// <summary>
+    /// Before the group policy is updated.
+    /// </summary>
+    BeforeUpdate,
 }

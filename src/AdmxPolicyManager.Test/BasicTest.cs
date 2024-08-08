@@ -38,8 +38,7 @@ namespace AdmxPolicyManager.Test
         [Fact]
         public void BatchRunTest()
         {
-            GroupPolicy.SetMultipleUserPolicies(new[]
-            {
+            var requests = new SetMultipleGroupPolicyRequest[] {
                 new SetMultipleGroupPolicyRequest
                 {
                     SubKey = "Software\\Policies\\Microsoft\\Edge",
@@ -68,7 +67,12 @@ namespace AdmxPolicyManager.Test
                     Value = 1,
                     RequireExpandString = false,
                 },
-            });
+            };
+
+            var results = GroupPolicy.SetMultipleUserPolicies(requests);
+
+            Assert.Equal(4, results);
+            Assert.Equal(4, requests.Count(x => x.Result == GroupPolicyUpdateResult.UpdateSucceed));
 
             var result = GroupPolicy.GetUserPolicy("Software\\Policies\\Microsoft\\Edge", "AllowSurfGame");
             Assert.Equal(1, result.Value);

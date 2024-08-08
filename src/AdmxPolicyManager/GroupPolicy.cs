@@ -71,8 +71,7 @@ partial class GroupPolicy
         o.OpenGroupPolicy(context.Location, context.LocationParameter);
         var results = new List<GroupPolicyUpdateResult>();
         foreach (var eachContext in context.Requests)
-            results.Add(o.SetGroupPolicyCore(context.IsMachine, eachContext.SubKey, eachContext.ValueName, eachContext.Value, eachContext.RequireExpandString, context.RetryCount));
-        context.Result = results.ToArray();
+            eachContext.Result = o.SetGroupPolicyCore(context.IsMachine, eachContext.SubKey, eachContext.ValueName, eachContext.Value, eachContext.RequireExpandString, context.RetryCount);
     }
 
     private static void DeleteMultipleGroupPolicyThreadProc(object? parameter)
@@ -84,8 +83,7 @@ partial class GroupPolicy
         o.OpenGroupPolicy(context.Location, context.LocationParameter);
         var results = new List<GroupPolicyDeleteResult>();
         foreach (var eachContext in context.Requests)
-            results.Add(o.DeleteGroupPolicyCore(context.IsMachine, eachContext.SubKey, eachContext.ValueName, context.RetryCount));
-        context.Result = results.ToArray();
+            eachContext.Result = o.DeleteGroupPolicyCore(context.IsMachine, eachContext.SubKey, eachContext.ValueName, context.RetryCount);
     }
 }
 
@@ -146,7 +144,7 @@ partial class GroupPolicy
         return context.Result;
     }
 
-    private static IEnumerable<GroupPolicyUpdateResult> SetMultipleGroupPolicyInternal(
+    private static int SetMultipleGroupPolicyInternal(
         GroupPolicyLocation location, string locationParameter, bool isMachine,
         IEnumerable<SetMultipleGroupPolicyRequest> requests,
         int retryCount)
@@ -166,10 +164,10 @@ partial class GroupPolicy
         };
         thread.Start(context);
         thread.Join();
-        return context.Result;
+        return context.Requests.Where(x => x.Result == GroupPolicyUpdateResult.UpdateSucceed).Count();
     }
 
-    private static IEnumerable<GroupPolicyDeleteResult> DeleteMultipleGroupPolicyInternal(
+    private static int DeleteMultipleGroupPolicyInternal(
         GroupPolicyLocation location, string locationParameter, bool isMachine,
         IEnumerable<DeleteMultipleGroupPolicyRequest> requests,
         int retryCount)
@@ -189,7 +187,7 @@ partial class GroupPolicy
         };
         thread.Start(context);
         thread.Join();
-        return context.Result;
+        return context.Requests.Where(x => x.Result == GroupPolicyDeleteResult.DeleteSucceed).Count();
     }
 }
 
@@ -276,9 +274,9 @@ partial class GroupPolicy
     /// The number of retry attempts for the operation. Default is 5.
     /// </param>
     /// <returns>
-    /// The results of the operation.
+    /// The succeed count of the operation.
     /// </returns>
-    public static IEnumerable<GroupPolicyUpdateResult> SetMultipleMachinePolicies(IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    public static int SetMultipleMachinePolicies(IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => SetMultipleGroupPolicyInternal(GroupPolicyLocation.ThisComputer, string.Empty, /* isMachine */ true, requests, retryCount);
 
     /// <summary>
@@ -291,9 +289,9 @@ partial class GroupPolicy
     /// The number of retry attempts for the operation. Default is 5.
     /// </param>
     /// <returns>
-    /// The results of the operation.
+    /// The succeed count of the operation.
     /// </returns>
-    public static IEnumerable<GroupPolicyDeleteResult> DeleteMultipleMachinePolicies(IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    public static int DeleteMultipleMachinePolicies(IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => DeleteMultipleGroupPolicyInternal(GroupPolicyLocation.ThisComputer, string.Empty, /* isMachine */ true, requests, retryCount);
 }
 
@@ -347,8 +345,8 @@ partial class GroupPolicy
     /// </summary>
     /// <param name="requests">The collection of set multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (default is the default retry count).</param>
-    /// <returns>The collection of group policy update results.</returns>
-    public static IEnumerable<GroupPolicyUpdateResult> SetMultipleUserPolicies(IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    /// <returns>The succeed count of the operation.</returns>
+    public static int SetMultipleUserPolicies(IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => SetMultipleGroupPolicyInternal(GroupPolicyLocation.ThisComputer, string.Empty, /* isMachine */ false, requests, retryCount);
 
     /// <summary>
@@ -356,8 +354,8 @@ partial class GroupPolicy
     /// </summary>
     /// <param name="requests">The collection of delete multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (default is the default retry count).</param>
-    /// <returns>The collection of group policy delete results.</returns>
-    public static IEnumerable<GroupPolicyDeleteResult> DeleteMultipleUserPolicies(IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    /// <returns>The succeed count of the operation.</returns>
+    public static int DeleteMultipleUserPolicies(IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => DeleteMultipleGroupPolicyInternal(GroupPolicyLocation.ThisComputer, string.Empty, /* isMachine */ false, requests, retryCount);
 }
 
@@ -416,8 +414,8 @@ partial class GroupPolicy
     /// <param name="accountSid">The account SID.</param>
     /// <param name="requests">The list of set multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional).</param>
-    /// <returns>The collection of group policy update results.</returns>
-    public static IEnumerable<GroupPolicyUpdateResult> SetMultipleAccountPolicies(string accountSid, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    /// <returns>The succeed count of the operation.</returns>
+    public static int SetMultipleAccountPolicies(string accountSid, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => SetMultipleGroupPolicyInternal(GroupPolicyLocation.ThisComputersLocalUserOrGroup, accountSid, /* isMachine */ false, requests, retryCount);
 
     /// <summary>
@@ -426,8 +424,8 @@ partial class GroupPolicy
     /// <param name="accountSid">The account SID.</param>
     /// <param name="requests">The list of delete multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional).</param>
-    /// <returns>The collection of group policy delete results.</returns>
-    public static IEnumerable<GroupPolicyDeleteResult> DeleteMultipleAccountPolicies(string accountSid, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    /// <returns>The succeed count of the operation.</returns>
+    public static int DeleteMultipleAccountPolicies(string accountSid, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => DeleteMultipleGroupPolicyInternal(GroupPolicyLocation.ThisComputersLocalUserOrGroup, accountSid, /* isMachine */ false, requests, retryCount);
 }
 
@@ -484,8 +482,8 @@ partial class GroupPolicy
     /// <param name="remoteComputerName">The name of the remote computer.</param>
     /// <param name="requests">The collection of set multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional).</param>
-    /// <returns>The collection of group policy update results.</returns>
-    public static IEnumerable<GroupPolicyUpdateResult> SetMultipleRemoteMachinePolicies(string remoteComputerName, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    /// <returns>The succeed count of the operation.</returns>
+    public static int SetMultipleRemoteMachinePolicies(string remoteComputerName, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => SetMultipleGroupPolicyInternal(GroupPolicyLocation.RemoteComputer, remoteComputerName, /* isMachine */ true, requests, retryCount);
 
     /// <summary>
@@ -494,8 +492,8 @@ partial class GroupPolicy
     /// <param name="remoteComputerName">The name of the remote computer.</param>
     /// <param name="requests">The collection of delete multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional).</param>
-    /// <returns>The collection of group policy delete results.</returns>
-    public static IEnumerable<GroupPolicyDeleteResult> DeleteMultipleRemoteMachinePolicies(string remoteComputerName, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    /// <returns>The succeed count of the operation.</returns>
+    public static int DeleteMultipleRemoteMachinePolicies(string remoteComputerName, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => DeleteMultipleGroupPolicyInternal(GroupPolicyLocation.RemoteComputer, remoteComputerName, /* isMachine */ true, requests, retryCount);
 }
 
@@ -552,8 +550,8 @@ partial class GroupPolicy
     /// <param name="remoteComputerName">The name of the remote computer.</param>
     /// <param name="requests">The collection of set multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional).</param>
-    /// <returns>The collection of group policy update results.</returns>
-    public static IEnumerable<GroupPolicyUpdateResult> SetMultipleRemoteUserPolicies(string remoteComputerName, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    /// <returns>The succeed count of the operation.</returns>
+    public static int SetMultipleRemoteUserPolicies(string remoteComputerName, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => SetMultipleGroupPolicyInternal(GroupPolicyLocation.RemoteComputer, remoteComputerName, /* isMachine */ false, requests, retryCount);
 
     /// <summary>
@@ -563,7 +561,7 @@ partial class GroupPolicy
     /// <param name="requests">The collection of delete multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional).</param>
     /// <returns>The collection of group policy delete results.</returns>
-    public static IEnumerable<GroupPolicyDeleteResult> DeleteMultipleRemoteUserPolicies(string remoteComputerName, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    public static int DeleteMultipleRemoteUserPolicies(string remoteComputerName, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => DeleteMultipleGroupPolicyInternal(GroupPolicyLocation.RemoteComputer, remoteComputerName, /* isMachine */ false, requests, retryCount);
 }
 
@@ -620,8 +618,8 @@ partial class GroupPolicy
     /// <param name="path">The path of the directory.</param>
     /// <param name="requests">The collection of set multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional, default value is DefaultRetryCount).</param>
-    /// <returns>The collection of group policy update results.</returns>
-    public static IEnumerable<GroupPolicyUpdateResult> SetMultipleDirectoryMachinePolicies(string path, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    /// <returns>The collection of group policy delete results.</returns>
+    public static int SetMultipleDirectoryMachinePolicies(string path, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => SetMultipleGroupPolicyInternal(GroupPolicyLocation.DirectoryService, path, /* isMachine */ true, requests, retryCount);
 
     /// <summary>
@@ -631,7 +629,7 @@ partial class GroupPolicy
     /// <param name="requests">The collection of delete multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional, default value is DefaultRetryCount).</param>
     /// <returns>The collection of group policy delete results.</returns>
-    public static IEnumerable<GroupPolicyDeleteResult> DeleteMultipleDirectoryMachinePolicies(string path, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    public static int DeleteMultipleDirectoryMachinePolicies(string path, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => DeleteMultipleGroupPolicyInternal(GroupPolicyLocation.DirectoryService, path, /* isMachine */ true, requests, retryCount);
 }
 
@@ -688,8 +686,8 @@ partial class GroupPolicy
     /// <param name="path">The path of the directory.</param>
     /// <param name="requests">The collection of set multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional, default is DefaultRetryCount).</param>
-    /// <returns>The collection of group policy update results.</returns>
-    public static IEnumerable<GroupPolicyUpdateResult> SetMultipleDirectoryUserPolicies(string path, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    /// <returns>The collection of group policy delete results.</returns>
+    public static int SetMultipleDirectoryUserPolicies(string path, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => SetMultipleGroupPolicyInternal(GroupPolicyLocation.DirectoryService, path, /* isMachine */ false, requests, retryCount);
 
     /// <summary>
@@ -699,6 +697,6 @@ partial class GroupPolicy
     /// <param name="requests">The collection of delete multiple group policy requests.</param>
     /// <param name="retryCount">The number of retry attempts (optional, default is DefaultRetryCount).</param>
     /// <returns>The collection of group policy delete results.</returns>
-    public static IEnumerable<GroupPolicyDeleteResult> DeleteMultipleDirectoryUserPolicies(string path, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
+    public static int DeleteMultipleDirectoryUserPolicies(string path, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount = DefaultRetryCount)
         => DeleteMultipleGroupPolicyInternal(GroupPolicyLocation.DirectoryService, path, /* isMachine */ false, requests, retryCount);
 }

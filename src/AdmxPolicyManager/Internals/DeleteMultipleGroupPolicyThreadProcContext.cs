@@ -11,5 +11,4 @@ internal sealed class DeleteMultipleGroupPolicyThreadProcContext
     public bool IsMachine { get; set; }
     public IEnumerable<DeleteMultipleGroupPolicyRequest> Requests { get; set; } = Enumerable.Empty<DeleteMultipleGroupPolicyRequest>();
     public int RetryCount { get; set; } = GroupPolicy.DefaultRetryCount;
-    public IEnumerable<GroupPolicyDeleteResult> Result { get; set; } = Enumerable.Empty<GroupPolicyDeleteResult>();
 }

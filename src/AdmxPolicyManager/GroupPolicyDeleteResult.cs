@@ -24,4 +24,9 @@ public enum GroupPolicyDeleteResult
     /// Failed to save the group policy.
     /// </summary>
     SaveFailed,
+    
+    /// <summary>
+    /// Before delete event.
+    /// </summary>
+    BeforeDelete,
 }

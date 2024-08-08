@@ -6,6 +6,10 @@ Windows Policy Setting and Lookup Framework for use with the AdmxParser package
 
 ## Breaking Changes
 
+### 0.6.2 -> 0.6.3
+
+- `Set~~~Policies` and `Delete~~~Policies` methods has been changed return type from collection to count integer. You can lookup the result in the request object.
+
 ### v0.5.x -> v0.6
 
 **The code has been completely redeveloped to use AdmxParser's interpreted model, and it has been completely redeveloped to ensure stable operation, and is equipped with code that is completely different from the existing 0.5.x version.**

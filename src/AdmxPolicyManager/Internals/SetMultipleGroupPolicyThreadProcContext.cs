@@ -11,5 +11,4 @@ internal sealed class SetMultipleGroupPolicyThreadProcContext
     public bool IsMachine { get; set; }
     public IEnumerable<SetMultipleGroupPolicyRequest> Requests { get; set; } = Enumerable.Empty<SetMultipleGroupPolicyRequest>();
     public int RetryCount { get; set; } = GroupPolicy.DefaultRetryCount;
-    public IEnumerable<GroupPolicyUpdateResult> Result { get; set; } = Enumerable.Empty<GroupPolicyUpdateResult>();
 }

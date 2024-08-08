@@ -24,4 +24,9 @@ public sealed class SetMultipleGroupPolicyRequest
     /// Gets or sets a value indicating whether the value should expand envrionment variable.
     /// </summary>
     public bool RequireExpandString { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the value should be updated.
+    /// </summary>
+    public GroupPolicyUpdateResult Result { get; internal set; } = GroupPolicyUpdateResult.BeforeUpdate;
 }

@@ -1,5 +1,6 @@
 using AdmxParser;
 using AdmxPolicyManager;
+using AdmxPolicyManager.Models;
 
 namespace AdmxPolicyManager.Test
 {
@@ -32,6 +33,45 @@ namespace AdmxPolicyManager.Test
             var queryResult = fontSizePolicy.GetUserElement(elemId);
             Assert.NotNull(queryResult);
             Assert.Equal(value, queryResult.Value);
+        }
+
+        [Fact]
+        public void BatchRunTest()
+        {
+            GroupPolicy.SetMultipleUserPolicies(new[]
+            {
+                new SetMultipleGroupPolicyRequest
+                {
+                    SubKey = "Software\\Policies\\Microsoft\\Edge",
+                    ValueName = "AllowSurfGame",
+                    Value = 0,
+                    RequireExpandString = false,
+                },
+                new SetMultipleGroupPolicyRequest
+                {
+                    SubKey = "Software\\Policies\\Microsoft\\Edge",
+                    ValueName = "AllowSurfGame",
+                    Value = 1,
+                    RequireExpandString = false,
+                },
+                new SetMultipleGroupPolicyRequest
+                {
+                    SubKey = "Software\\Policies\\Microsoft\\Edge",
+                    ValueName = "AllowSurfGame",
+                    Value = 0,
+                    RequireExpandString = false,
+                },
+                new SetMultipleGroupPolicyRequest
+                {
+                    SubKey = "Software\\Policies\\Microsoft\\Edge",
+                    ValueName = "AllowSurfGame",
+                    Value = 1,
+                    RequireExpandString = false,
+                },
+            });
+
+            var result = GroupPolicy.GetUserPolicy("Software\\Policies\\Microsoft\\Edge", "AllowSurfGame");
+            Assert.Equal(1, result.Value);
         }
     }
 }

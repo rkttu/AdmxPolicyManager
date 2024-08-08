@@ -1,4 +1,6 @@
-﻿namespace AdmxPolicyManager.Internals;
+﻿using System.Collections;
+
+namespace AdmxPolicyManager.Internals;
 
 internal sealed class DeleteGroupPolicyThreadProcContext
 {

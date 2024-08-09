@@ -64,6 +64,11 @@ internal static class NativeMethods
         DesiredSAMPermissions samDesired,
         [MarshalAs(UnmanagedType.U4)] int Reserved);
 
+    [DllImport("advapi32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    public static extern int RegDeleteValueW(
+        IntPtr hKey,
+        string lpValueName);
+
     [DllImport("advapi32.dll", CharSet = CharSet.None, ExactSpelling = true)]
     public static extern int RegCloseKey(IntPtr hKey);
 

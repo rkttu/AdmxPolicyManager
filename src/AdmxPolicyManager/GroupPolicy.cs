@@ -69,9 +69,7 @@ partial class GroupPolicy
             throw new ArgumentException($"Incompatible parameter type: '{parameter?.GetType()?.Name ?? "(null)"}'");
         using var o = new GroupPolicyObject();
         o.OpenGroupPolicy(context.Location, context.LocationParameter);
-        var results = new List<GroupPolicyUpdateResult>();
-        foreach (var eachContext in context.Requests)
-            eachContext.Result = o.SetGroupPolicyCore(context.IsMachine, eachContext.SubKey, eachContext.ValueName, eachContext.Value, eachContext.RequireExpandString, context.RetryCount);
+        o.SetMultipleGroupPolicyCore(context.IsMachine, context.Requests, context.RetryCount);
     }
 
     private static void DeleteMultipleGroupPolicyThreadProc(object? parameter)
@@ -81,9 +79,7 @@ partial class GroupPolicy
             throw new ArgumentException($"Incompatible parameter type: '{parameter?.GetType()?.Name ?? "(null)"}'");
         using var o = new GroupPolicyObject();
         o.OpenGroupPolicy(context.Location, context.LocationParameter);
-        var results = new List<GroupPolicyDeleteResult>();
-        foreach (var eachContext in context.Requests)
-            eachContext.Result = o.DeleteGroupPolicyCore(context.IsMachine, eachContext.SubKey, eachContext.ValueName, context.RetryCount);
+        o.DeleteMultipleGroupPolicyCore(context.IsMachine, context.Requests, context.RetryCount);
     }
 }
 

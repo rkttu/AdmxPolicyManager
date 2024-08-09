@@ -1,5 +1,6 @@
 ﻿using AdmxPolicyManager.Internals;
 using AdmxPolicyManager.Interop;
+using AdmxPolicyManager.Models;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -227,7 +228,7 @@ internal sealed partial class GroupPolicyObject : IDisposable
         }
     }
 
-    public GroupPolicyQueryResult GetGroupPolicyCore(bool isMachine, string subKey, string valueName, bool useCriticalPolicySection)
+    internal GroupPolicyQueryResult GetGroupPolicyCore(bool isMachine, string subKey, string valueName, bool useCriticalPolicySection)
     {
         var criticalSection = useCriticalPolicySection ? NativeMethods.EnterCriticalPolicySection(isMachine) : IntPtr.Zero;
 
@@ -258,7 +259,7 @@ internal sealed partial class GroupPolicyObject : IDisposable
         }
     }
 
-    public MultipleGroupPolicyQueryResult GetGroupPoliciesCore(bool isMachine, string subKey, string? valueNamePrefix, bool useCriticalPolicySection)
+    internal MultipleGroupPolicyQueryResult GetGroupPoliciesCore(bool isMachine, string subKey, string? valueNamePrefix, bool useCriticalPolicySection)
     {
         var criticalSection = useCriticalPolicySection ? NativeMethods.EnterCriticalPolicySection(isMachine) : IntPtr.Zero;
 
@@ -324,7 +325,7 @@ internal sealed partial class GroupPolicyObject : IDisposable
         }
     }
 
-    public GroupPolicyUpdateResult SetGroupPolicyCore(bool isMachine, string subKey, string valueName, object value, bool requireExpandString, int retryCount)
+    internal GroupPolicyUpdateResult SetGroupPolicyCore(bool isMachine, string subKey, string valueName, object value, bool requireExpandString, int retryCount)
     {
         if (value == null)
             throw new ArgumentNullException(nameof(value));
@@ -391,7 +392,89 @@ internal sealed partial class GroupPolicyObject : IDisposable
         }
     }
 
-    public GroupPolicyDeleteResult DeleteGroupPolicyCore(bool isMachine, string subKey, string valueName, int retryCount)
+    internal bool SetMultipleGroupPolicyCore(bool isMachine, IEnumerable<SetMultipleGroupPolicyRequest> requests, int retryCount)
+    {
+        if (requests == null)
+            throw new ArgumentNullException(nameof(requests));
+
+        var gphKey = isMachine ? GetUnsafeMachineRegistryKey() : GetUnsafeUserRegistryKey();
+        var gphSubKey = default(IntPtr);
+
+        try
+        {
+            foreach (var eachRequest in requests)
+            {
+                if (NativeMethods.RegCreateKeyExW(gphKey, eachRequest.SubKey, 0, null, ExtendedRegistryOptions.NonVolatile,
+                    DesiredSAMPermissions.Write, IntPtr.Zero, out gphSubKey, out var flag).IsNotSuccessCode())
+                {
+                    eachRequest.Result = GroupPolicyUpdateResult.CreateOrOpenFailed;
+                    continue;
+                }
+
+                var keyValue = IntPtr.Zero;
+                var hr = 0;
+
+                switch (eachRequest.Value)
+                {
+                    case int i:
+                        keyValue = Marshal.AllocHGlobal(Marshal.SizeOf<int>());
+                        Marshal.WriteInt32(keyValue, i);
+                        hr = NativeMethods.RegSetValueExW(gphSubKey, eachRequest.ValueName, 0, RegistryValueType.DWord, keyValue, Marshal.SizeOf<int>());
+                        break;
+
+                    case uint ui:
+                        keyValue = Marshal.AllocHGlobal(Marshal.SizeOf<uint>());
+                        Marshal.WriteInt32(keyValue, unchecked((int)ui));
+                        hr = NativeMethods.RegSetValueExW(gphSubKey, eachRequest.ValueName, 0, RegistryValueType.DWord, keyValue, Marshal.SizeOf<uint>());
+                        break;
+
+                    case long l:
+                        keyValue = Marshal.AllocHGlobal(Marshal.SizeOf<long>());
+                        Marshal.WriteInt64(keyValue, l);
+                        hr = NativeMethods.RegSetValueExW(gphSubKey, eachRequest.ValueName, 0, RegistryValueType.DWord, keyValue, Marshal.SizeOf<long>());
+                        break;
+
+                    case ulong ul:
+                        keyValue = Marshal.AllocHGlobal(Marshal.SizeOf<ulong>());
+                        Marshal.WriteInt64(keyValue, unchecked((long)ul));
+                        hr = NativeMethods.RegSetValueExW(gphSubKey, eachRequest.ValueName, 0, RegistryValueType.DWord, keyValue, Marshal.SizeOf<ulong>());
+                        break;
+
+                    case string s:
+                        keyValue = Marshal.StringToHGlobalUni(s);
+                        hr = NativeMethods.RegSetValueExW(gphSubKey, eachRequest.ValueName, 0, eachRequest.RequireExpandString ? RegistryValueType.ExpandString : RegistryValueType.String, keyValue, s.Length * 2 + 2);
+                        break;
+
+                    default:
+                        eachRequest.Result = GroupPolicyUpdateResult.SetFailed;
+                        continue;
+                }
+
+                if (hr.IsNotSuccessCode())
+                {
+                    eachRequest.Result = GroupPolicyUpdateResult.SetFailed;
+                    continue;
+                }
+            }
+
+            var saveResult = Save(isMachine, true, retryCount);
+
+            foreach (var eachRequest in requests)
+            {
+                if (eachRequest.Result == GroupPolicyUpdateResult.BeforeUpdate)
+                    eachRequest.Result = saveResult ? GroupPolicyUpdateResult.UpdateSucceed : GroupPolicyUpdateResult.SaveFailed;
+            }
+
+            return saveResult;
+        }
+        finally
+        {
+            NativeMethods.RegCloseKey(gphSubKey);
+            NativeMethods.RegCloseKey(gphKey);
+        }
+    }
+
+    internal GroupPolicyDeleteResult DeleteGroupPolicyCore(bool isMachine, string subKey, string valueName, int retryCount)
     {
         var gphKey = isMachine ? GetUnsafeMachineRegistryKey() : GetUnsafeUserRegistryKey();
         var hKey = default(IntPtr);
@@ -399,25 +482,67 @@ internal sealed partial class GroupPolicyObject : IDisposable
         try
         {
             if (NativeMethods.RegOpenKeyExW(
-                gphKey, subKey, ExtendedRegistryOptions.NonVolatile, DesiredSAMPermissions.QueryValue, out hKey)
-                .IsSuccessCode())
+                gphKey, subKey, ExtendedRegistryOptions.NonVolatile, DesiredSAMPermissions.QueryValue, out hKey).IsNotSuccessCode())
+                return GroupPolicyDeleteResult.NoItemFound;
+
+            NativeMethods.RegCloseKey(hKey);
+            hKey = IntPtr.Zero;
+
+            if (NativeMethods.RegDeleteValueW(gphKey, valueName).IsNotSuccessCode())
             {
+                NativeMethods.RegCloseKey(gphKey);
+                return GroupPolicyDeleteResult.CreateOrOpenFailed;
+            }
+
+            if (!Save(isMachine, false, retryCount))
+                return GroupPolicyDeleteResult.SaveFailed;
+
+            return GroupPolicyDeleteResult.DeleteSucceed;
+        }
+        finally
+        {
+            if (hKey != IntPtr.Zero)
+                NativeMethods.RegCloseKey(hKey);
+
+            NativeMethods.RegCloseKey(gphKey);
+        }
+    }
+
+    internal bool DeleteMultipleGroupPolicyCore(bool isMachine, IEnumerable<DeleteMultipleGroupPolicyRequest> requests, int retryCount)
+    {
+        var gphKey = isMachine ? GetUnsafeMachineRegistryKey() : GetUnsafeUserRegistryKey();
+        var hKey = default(IntPtr);
+
+        try
+        {
+            foreach (var eachRequest in requests)
+            {
+                if (NativeMethods.RegOpenKeyExW(
+                    gphKey, eachRequest.SubKey, ExtendedRegistryOptions.NonVolatile, DesiredSAMPermissions.QueryValue, out hKey).IsNotSuccessCode())
+                {
+                    eachRequest.Result = GroupPolicyDeleteResult.NoItemFound;
+                    continue;
+                }
+
                 NativeMethods.RegCloseKey(hKey);
                 hKey = IntPtr.Zero;
 
-                if (NativeMethods.RegDeleteKeyExW(gphKey, subKey, DesiredSAMPermissions.Write, 0).IsNotSuccessCode())
+                if (NativeMethods.RegDeleteValueW(gphKey, eachRequest.ValueName).IsNotSuccessCode())
                 {
                     NativeMethods.RegCloseKey(gphKey);
-                    return GroupPolicyDeleteResult.CreateOrOpenFailed;
+                    eachRequest.Result = GroupPolicyDeleteResult.CreateOrOpenFailed;
                 }
-
-                if (!Save(isMachine, false, retryCount))
-                    return GroupPolicyDeleteResult.SaveFailed;
-
-                return GroupPolicyDeleteResult.DeleteSucceed;
             }
-            else
-                return GroupPolicyDeleteResult.NoItemFound;
+
+            var saveResult = Save(isMachine, true, retryCount);
+
+            foreach (var eachRequest in requests)
+            {
+                if (eachRequest.Result == GroupPolicyDeleteResult.BeforeDelete)
+                    eachRequest.Result = saveResult ? GroupPolicyDeleteResult.DeleteSucceed : GroupPolicyDeleteResult.SaveFailed;
+            }
+
+            return saveResult;
         }
         finally
         {

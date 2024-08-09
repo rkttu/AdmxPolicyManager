@@ -6,6 +6,10 @@ Windows Policy Setting and Lookup Framework for use with the AdmxParser package
 
 ## Breaking Changes
 
+### 0.6.3 -> 0.6.4
+
+- All of `~Core` methods has been hided. These methods are not intended to be used by the user.
+
 ### 0.6.2 -> 0.6.3
 
 - `Set~~~Policies` and `Delete~~~Policies` methods has been changed return type from collection to count integer. You can lookup the result in the request object.
